@@ -9,16 +9,104 @@
 <body>
     <header>
         <div class="container">
-            <h1 onclick="navigateToHome()">NewsFlash</h1>
+            <h1>NewsFlash</h1>
         </div>
     </header>
     
     <main>
-        <div class="container" id="app-container">
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
+        <div class="container">
+            <h1 class="page-title">Latest News</h1>
+            <div class="news-grid">
+                <!-- Article 1 -->
+                <div class="news-card">
+                    <a href="article1.html">
+                        <img src="https://images.unsplash.com/photo-1599940824399-b87987ceb72a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Scientists Discover New Species in Amazon Rainforest" class="news-card-image">
+                        <div class="news-card-content">
+                            <h2 class="news-card-title">Scientists Discover New Species in Amazon Rainforest</h2>
+                            <p class="news-card-description">A team of international researchers has discovered a previously unknown species of amphibian in the depths of the Amazon rainforest. The new species, named Amazonian glass frog, has translucent skin that reveals its internal organs.</p>
+                            <div class="news-card-footer">
+                                <span class="news-card-date">March 5, 2025</span>
+                                <span class="news-card-button">Read More</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Article 2 -->
+                <div class="news-card">
+                    <a href="article2.html">
+                        <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Global Tech Conference Announces Revolutionary AI Framework" class="news-card-image">
+                        <div class="news-card-content">
+                            <h2 class="news-card-title">Global Tech Conference Announces Revolutionary AI Framework</h2>
+                            <p class="news-card-description">TechWorld 2025 Conference unveiled a new open-source AI framework that promises to democratize access to advanced artificial intelligence tools for developers worldwide.</p>
+                            <div class="news-card-footer">
+                                <span class="news-card-date">March 4, 2025</span>
+                                <span class="news-card-button">Read More</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Article 3 -->
+                <div class="news-card">
+                    <a href="article3.html">
+                        <img src="https://images.unsplash.com/photo-1518005020951-eccb494ad742?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Sustainable City Initiative Transforms Urban Planning" class="news-card-image">
+                        <div class="news-card-content">
+                            <h2 class="news-card-title">Sustainable City Initiative Transforms Urban Planning</h2>
+                            <p class="news-card-description">The GreenCity Project has completed its first phase, converting 30% of urban infrastructure to sustainable alternatives and reducing carbon emissions by 45%.</p>
+                            <div class="news-card-footer">
+                                <span class="news-card-date">March 3, 2025</span>
+                                <span class="news-card-button">Read More</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Article 4 -->
+                <div class="news-card">
+                    <a href="article4.html">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="Global Economy Shows Signs of Stable Growth After Pandemic Recovery" class="news-card-image">
+                        <div class="news-card-content">
+                            <h2 class="news-card-title">Global Economy Shows Signs of Stable Growth After Pandemic Recovery</h2>
+                            <p class="news-card-description">Economic indicators point to sustained growth across major economies as post-pandemic recovery measures show lasting positive effects.</p>
+                            <div class="news-card-footer">
+                                <span class="news-card-date">March 2, 2025</span>
+                                <span class="news-card-button">Read More</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Article 5 -->
+                <div class="news-card">
+                    <a href="article5.html">
+                        <img src="https://images.unsplash.com/photo-1547891654-e66ed7ebb968?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="International Arts Festival Celebrates Global Cultural Heritage" class="news-card-image">
+                        <div class="news-card-content">
+                            <h2 class="news-card-title">International Arts Festival Celebrates Global Cultural Heritage</h2>
+                            <p class="news-card-description">The World Heritage Arts Festival opened this week featuring works from over 60 countries, highlighting traditional and contemporary expressions of cultural identity.</p>
+                            <div class="news-card-footer">
+                                <span class="news-card-date">March 1, 2025</span>
+                                <span class="news-card-button">Read More</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Article 6 -->
+                <div class="news-card">
+                    <a href="article6.html">
+                        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="New Health Study Reveals Benefits of Intermittent Exercise" class="news-card-image">
+                        <div class="news-card-content">
+                            <h2 class="news-card-title">New Health Study Reveals Benefits of Intermittent Exercise</h2>
+                            <p class="news-card-description">Research published in the Medical Journal of Health Sciences suggests that short bursts of activity throughout the day may be more beneficial than single longer workouts.</p>
+                            <div class="news-card-footer">
+                                <span class="news-card-date">February 28, 2025</span>
+                                <span class="news-card-button">Read More</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
             </div>
-            <!-- Content will be loaded here via JavaScript -->
         </div>
     </main>
     
@@ -27,7 +115,10 @@
             <p>© <span id="current-year"></span> NewsFlash. All content is for demo purposes only.</p>
         </div>
     </footer>
-    
-    <script src="script.js"></script>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
