@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Hiking Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #hikingMap {
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="hikingMap"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let hikingMap = L.map('hikingMap', {
+            center: [47.5605, -52.7126], // Signal Hill, St. John's NL
+            zoom: 14,
+            minZoom: 14, // Prevent zooming out
+            maxZoom: 14, // Prevent zooming in
+            zoomControl: false, // Remove zoom control
+            dragging: false // Disable dragging
+        });
+
+        let baseTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(hikingMap);
+
+        // Register service worker to cache map tiles
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(() => {
+                console.log('Service Worker registered');
+            }).catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
+        }
+
+        // GPS tracking
+        function onLocationFound(e) {
+            let radius = e.accuracy / 2;
+            L.marker(e.latlng).addTo(hikingMap).bindPopup("You are here").openPopup();
+            L.circle(e.latlng, radius).addTo(hikingMap);
+            console.log("User location found:", e.latlng);
+        }
+
+        function onLocationError(e) {
+            console.error("Location error:", e.message);
+            alert("Location access denied or unavailable.");
+        }
+
+        hikingMap.locate({ setView: true, watch: true });
+        hikingMap.on('locationfound', onLocationFound);
+        hikingMap.on('locationerror', onLocationError);
+    </script>
+</body>
+
+</html>
