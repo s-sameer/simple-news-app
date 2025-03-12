@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Map with GPS</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #header {
+            background-color: #3498db;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #map-container {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background-color: #f8f8f8;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 50%;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button:hover {
+            background-color: #f0f0f0;
+        }
+
+        #location-button {
+            background-color: #3498db;
+            color: white;
+        }
+
+        #location-button:hover {
+            background-color: #2980b9;
+        }
+
+        #status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        #user-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #3498db;
+            border-radius: 50%;
+            border: 3px solid white;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        #accuracy-circle {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(52, 152, 219, 0.2);
+            border: 1px solid rgba(52, 152, 219, 0.5);
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+
+        .map-tile {
+            position: absolute;
+            background-size: cover;
+            width: 256px;
+            height: 256px;
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        #loading-progress {
+            width: 80%;
+            max-width: 300px;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #3498db;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+
+        #info-panel {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            max-width: 250px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="header">
+        <h1>Offline GPS Map</h1>
+    </div>
+
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="user-marker" style="display: none;"></div>
+        <div id="accuracy-circle" style="display: none;"></div>
+        <div id="status">Initializing map...</div>
+        <div id="info-panel">
+            This is a custom offline map of Central Park, New York City. No internet connection required once loaded.
+        </div>
+        <div id="controls">
+            <button id="zoom-in">+</button>
+            <button id="zoom-out">-</button>
+            <button id="location-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                    <line x1="12" y1="2" x2="12" y2="4"></line>
+                    <line x1="12" y1="20" x2="12" y2="22"></line>
+                    <line x1="2" y1="12" x2="4" y2="12"></line>
+                    <line x1="20" y1="12" x2="22" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="loading-screen">
+        <h2>Loading Map Data</h2>
+        <p>Downloading map tiles for offline use. Please wait...</p>
+        <div id="loading-progress">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        // Map configuration
+        const config = {
+            center: { lat: 40.7812, lng: -73.9665 }, // Central Park, NYC
+            zoom: 15,
+            minZoom: 14,
+            maxZoom: 18,
+            tileSize: 256,
+            tileRange: {
+                minLat: 40.7639,
+                maxLat: 40.8003,
+                minLng: -73.9818,
+                maxLng: -73.9495
+            }
+        };
+
+        // Map state
+        let mapState = {
+            center: { ...config.center },
+            zoom: config.zoom,
+            isDragging: false,
+            dragStart: { x: 0, y: 0 },
+            dragOffset: { x: 0, y: 0 },
+            watchId: null,
+            userLocation: null,
+            tiles: {},
+            tileImages: {},
+            isMapReady: false
+        };
+
+        // DOM elements
+        const mapElement = document.getElementById('map');
+        const userMarker = document.getElementById('user-marker');
+        const accuracyCircle = document.getElementById('accuracy-circle');
+        const statusElement = document.getElementById('status');
+        const zoomInButton = document.getElementById('zoom-in');
+        const zoomOutButton = document.getElementById('zoom-out');
+        const locationButton = document.getElementById('location-button');
+        const loadingScreen = document.getElementById('loading-screen');
+        const progressBar = document.getElementById('progress-bar');
+
+        // Convert latitude/longitude to pixel coordinates
+        function latLngToPixel(lat, lng, zoom) {
+            const scale = Math.pow(2, zoom);
+            const worldSize = config.tileSize * scale;
+
+            // Convert latitude to y using Mercator projection
+            const sinLat = Math.sin(lat * Math.PI / 180);
+            const y = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * worldSize;
+
+            // Convert longitude to x
+            const x = ((lng + 180) / 360) * worldSize;
+
+            return { x, y };
+        }
+
+        // Convert pixel coordinates to latitude/longitude
+        function pixelToLatLng(x, y, zoom) {
+            const scale = Math.pow(2, zoom);
+            const worldSize = config.tileSize * scale;
+
+            const lng = (x / worldSize) * 360 - 180;
+
+            const mercN = Math.PI - (2 * Math.PI * y) / worldSize;
+            const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(mercN) - Math.exp(-mercN)));
+
+            return { lat, lng };
+        }
+
+        // Get tile coordinates for a specific position
+        function getTileCoordinates(lat, lng, zoom) {
+            const pixel = latLngToPixel(lat, lng, zoom);
+            const tileX = Math.floor(pixel.x / config.tileSize);
+            const tileY = Math.floor(pixel.y / config.tileSize);
+            return { tileX, tileY };
+        }
+
+        // Render the map
+        function renderMap() {
+            if (!mapState.isMapReady) return;
+
+            // Clear existing tiles
+            mapElement.innerHTML = '';
+
+            const scale = Math.pow(2, mapState.zoom);
+            const centerPixel = latLngToPixel(mapState.center.lat, mapState.center.lng, mapState.zoom);
+
+            // Calculate viewport dimensions
+            const viewportWidth = mapElement.clientWidth;
+            const viewportHeight = mapElement.clientHeight;
+
+            // Calculate visible tile range
+            const tileBoundsX = {
+                min: Math.floor((centerPixel.x - viewportWidth / 2) / config.tileSize) - 1,
+                max: Math.ceil((centerPixel.x + viewportWidth / 2) / config.tileSize)
+            };
+
+            const tileBoundsY = {
+                min: Math.floor((centerPixel.y - viewportHeight / 2) / config.tileSize) - 1,
+                max: Math.ceil((centerPixel.y + viewportHeight / 2) / config.tileSize)
+            };
+
+            // Render visible tiles
+            for (let tileY = tileBoundsY.min; tileY <= tileBoundsY.max; tileY++) {
+                for (let tileX = tileBoundsX.min; tileX <= tileBoundsX.max; tileX++) {
+                    const tileKey = `${mapState.zoom}/${tileX}/${tileY}`;
+
+                    // Check if we have this tile in our cache
+                    if (mapState.tileImages[tileKey]) {
+                        const tilePixelX = tileX * config.tileSize;
+                        const tilePixelY = tileY * config.tileSize;
+
+                        const tileLeft = viewportWidth / 2 + (tilePixelX - centerPixel.x) + mapState.dragOffset.x;
+                        const tileTop = viewportHeight / 2 + (tilePixelY - centerPixel.y) + mapState.dragOffset.y;
+
+                        const tile = document.createElement('div');
+                        tile.className = 'map-tile';
+                        tile.style.left = `${tileLeft}px`;
+                        tile.style.top = `${tileTop}px`;
+                        tile.style.backgroundImage = `url(${mapState.tileImages[tileKey]})`;
+
+                        mapElement.appendChild(tile);
+                    }
+                }
+            }
+
+            // Update user location marker if available
+            updateUserMarker();
+        }
+
+        // Update user marker position
+        function updateUserMarker() {
+            if (!mapState.userLocation) {
+                userMarker.style.display = 'none';
+                accuracyCircle.style.display = 'none';
+                return;
+            }
+
+            const { lat, lng, accuracy } = mapState.userLocation;
+            const centerPixel = latLngToPixel(mapState.center.lat, mapState.center.lng, mapState.zoom);
+            const userPixel = latLngToPixel(lat, lng, mapState.zoom);
+
+            const viewportWidth = mapElement.clientWidth;
+            const viewportHeight = mapElement.clientHeight;
+
+            const left = viewportWidth / 2 + (userPixel.x - centerPixel.x) + mapState.dragOffset.x;
+            const top = viewportHeight / 2 + (userPixel.y - centerPixel.y) + mapState.dragOffset.y;
+
+            // Update marker position
+            userMarker.style.display = 'block';
+            userMarker.style.left = `${left}px`;
+            userMarker.style.top = `${top}px`;
+
+            // Update accuracy circle
+            if (accuracy && accuracy > 0) {
+                // Convert accuracy in meters to pixels on the map
+                // This is an approximation that works reasonably well at most latitudes
+                const metersPerPixel = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, mapState.zoom);
+                const radiusPixels = accuracy / metersPerPixel;
+
+                accuracyCircle.style.display = 'block';
+                accuracyCircle.style.left = `${left}px`;
+                accuracyCircle.style.top = `${top}px`;
+                accuracyCircle.style.width = `${radiusPixels * 2}px`;
+                accuracyCircle.style.height = `${radiusPixels * 2}px`;
+            } else {
+                accuracyCircle.style.display = 'none';
+            }
+        }
+
+        // Track user location
+        function startTracking() {
+            if (navigator.geolocation) {
+                statusElement.textContent = 'Obtaining location...';
+
+                mapState.watchId = navigator.geolocation.watchPosition(
+                    position => {
+                        const { latitude, longitude, accuracy } = position.coords;
+
+                        // Check if location is within our map bounds
+                        if (latitude < config.tileRange.minLat ||
+                            latitude > config.tileRange.maxLat ||
+                            longitude < config.tileRange.minLng ||
+                            longitude > config.tileRange.maxLng) {
+                            statusElement.textContent = 'Warning: Current location outside map area';
+                        } else {
+                            statusElement.textContent = 'Location found';
+                            setTimeout(() => {
+                                statusElement.textContent = '';
+                            }, 2000);
+                        }
+
+                        mapState.userLocation = {
+                            lat: latitude,
+                            lng: longitude,
+                            accuracy: accuracy
+                        };
+
+                        updateUserMarker();
+                    },
+                    error => {
+                        let errorMessage = 'Unable to retrieve your location. ';
+
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage += 'Location access denied.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage += 'Location information unavailable.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage += 'Location request timed out.';
+                                break;
+                            default:
+                                errorMessage += 'Unknown error occurred.';
+                                break;
+                        }
+
+                        statusElement.textContent = errorMessage;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 10000,  // 10 seconds
+                        timeout: 10000     // 10 seconds
+                    }
+                );
+            } else {
+                statusElement.textContent = 'Geolocation is not supported by this browser.';
+            }
+        }
+
+        // Center map on user location
+        function centerOnUser() {
+            if (mapState.userLocation) {
+                mapState.center = { ...mapState.userLocation };
+                mapState.dragOffset = { x: 0, y: 0 };
+                renderMap();
+                statusElement.textContent = 'Centered on current location';
+                setTimeout(() => {
+                    statusElement.textContent = '';
+                }, 2000);
+            } else {
+                statusElement.textContent = 'Location not available';
+                setTimeout(() => {
+                    statusElement.textContent = '';
+                }, 2000);
+            }
+        }
+
+        // Load map tiles for offline use
+        function loadMapTiles() {
+            const tilesToLoad = [];
+
+            // Generate tile list for all zoom levels
+            for (let zoom = config.minZoom; zoom <= config.maxZoom; zoom++) {
+                const minTile = getTileCoordinates(config.tileRange.minLat, config.tileRange.minLng, zoom);
+                const maxTile = getTileCoordinates(config.tileRange.maxLat, config.tileRange.maxLng, zoom);
+
+                for (let tileY = minTile.tileY; tileY <= maxTile.tileY; tileY++) {
+                    for (let tileX = minTile.tileX; tileX <= maxTile.tileX; tileX++) {
+                        tilesToLoad.push({
+                            zoom: zoom,
+                            tileX: tileX,
+                            tileY: tileY
+                        });
+                    }
+                }
+            }
+
+            // Use placeholder images for the tiles (in a real app, you'd use actual map tiles)
+            const totalTiles = tilesToLoad.length;
+            let loadedTiles = 0;
+
+            // For each tile, generate a unique color pattern
+            tilesToLoad.forEach((tile, index) => {
+                const { zoom, tileX, tileY } = tile;
+                const tileKey = `${zoom}/${tileX}/${tileY}`;
+
+                // Create a colored tile using canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = config.tileSize;
+                canvas.height = config.tileSize;
+                const ctx = canvas.getContext('2d');
+
+                // This is a placeholder pattern - in a real app, you'd use actual map tiles
+                // Calculate a color based on tile coordinates for variety
+                const r = Math.floor(((tileX * 17) % 256) * 0.7 + 70);
+                const g = Math.floor(((tileY * 23) % 256) * 0.7 + 70);
+                const b = Math.floor(((zoom * 13) % 256) * 0.7 + 70);
+
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                ctx.fillRect(0, 0, config.tileSize, config.tileSize);
+
+                // Draw grid lines
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(0, 0, config.tileSize, config.tileSize);
+
+                // Add some "road" features
+                if ((tileX + tileY) % 3 === 0) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(0, tileY % 128);
+                    ctx.lineTo(config.tileSize, (tileX + 100) % 256);
+                    ctx.stroke();
+                }
+
+                if ((tileX - tileY) % 4 === 0) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(tileX % 128, 0);
+                    ctx.lineTo((tileY + 50) % 256, config.tileSize);
+                    ctx.stroke();
+                }
+
+                // Add tile text for debugging
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.font = '12px Arial';
+                ctx.fillText(`Z:${zoom} X:${tileX} Y:${tileY}`, 5, 15);
+
+                // Convert to data URL and store
+                const dataUrl = canvas.toDataURL('image/png');
+                mapState.tileImages[tileKey] = dataUrl;
+
+                // Update progress
+                loadedTiles++;
+                const progress = Math.floor((loadedTiles / totalTiles) * 100);
+                progressBar.style.width = `${progress}%`;
+
+                // Check if all tiles are loaded
+                if (loadedTiles === totalTiles) {
+                    setTimeout(() => {
+                        mapState.isMapReady = true;
+                        loadingScreen.style.display = 'none';
+                        renderMap();
+                        startTracking();
+                        statusElement.textContent = 'Map loaded successfully';
+                        setTimeout(() => {
+                            statusElement.textContent = '';
+                        }, 2000);
+                    }, 500);
+                }
+            });
+        }
+
+        // Event listeners for map interactions
+        function setupEventListeners() {
+            // Zoom buttons
+            zoomInButton.addEventListener('click', () => {
+                if (mapState.zoom < config.maxZoom) {
+                    mapState.zoom++;
+                    mapState.dragOffset = { x: 0, y: 0 };
+                    renderMap();
+                }
+            });
+
+            zoomOutButton.addEventListener('click', () => {
+                if (mapState.zoom > config.minZoom) {
+                    mapState.zoom--;
+                    mapState.dragOffset = { x: 0, y: 0 };
+                    renderMap();
+                }
+            });
+
+            // Location button
+            locationButton.addEventListener('click', centerOnUser);
+
+            // Map dragging
+            mapElement.addEventListener('mousedown', event => {
+                mapState.isDragging = true;
+                mapState.dragStart = { x: event.clientX, y: event.clientY };
+            });
+
+            mapElement.addEventListener('touchstart', event => {
+                if (event.touches.length === 1) {
+                    mapState.isDragging = true;
+                    mapState.dragStart = {
+                        x: event.touches[0].clientX,
+                        y: event.touches[0].clientY
+                    };
+                }
+            });
+
+            document.addEventListener('mousemove', event => {
+                if (mapState.isDragging) {
+                    const dx = event.clientX - mapState.dragStart.x;
+                    const dy = event.clientY - mapState.dragStart.y;
+
+                    mapState.dragOffset = { x: dx, y: dy };
+                    renderMap();
+                }
+            });
+
+            document.addEventListener('touchmove', event => {
+                if (mapState.isDragging && event.touches.length === 1) {
+                    const dx = event.touches[0].clientX - mapState.dragStart.x;
+                    const dy = event.touches[0].clientY - mapState.dragStart.y;
+
+                    mapState.dragOffset = { x: dx, y: dy };
+                    renderMap();
+
+                    // Prevent scrolling while dragging the map
+                    event.preventDefault();
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (mapState.isDragging) {
+                    mapState.isDragging = false;
+
+                    // Update center position
+                    const scale = Math.pow(2, mapState.zoom);
+                    const centerPixel = latLngToPixel(mapState.center.lat, mapState.center.lng, mapState.zoom);
+
+                    // Calculate new center
+                    const newCenterPixel = {
+                        x: centerPixel.x - mapState.dragOffset.x,
+                        y: centerPixel.y - mapState.dragOffset.y
+                    };
+
+                    const newCenter = pixelToLatLng(newCenterPixel.x, newCenterPixel.y, mapState.zoom);
+                    mapState.center = newCenter;
+                    mapState.dragOffset = { x: 0, y: 0 };
+
+                    renderMap();
+                }
+            });
+
+            document.addEventListener('touchend', () => {
+                if (mapState.isDragging) {
+                    mapState.isDragging = false;
+
+                    // Update center position
+                    const scale = Math.pow(2, mapState.zoom);
+                    const centerPixel = latLngToPixel(mapState.center.lat, mapState.center.lng, mapState.zoom);
+
+                    // Calculate new center
+                    const newCenterPixel = {
+                        x: centerPixel.x - mapState.dragOffset.x,
+                        y: centerPixel.y - mapState.dragOffset.y
+                    };
+
+                    const newCenter = pixelToLatLng(newCenterPixel.x, newCenterPixel.y, mapState.zoom);
+                    mapState.center = newCenter;
+                    mapState.dragOffset = { x: 0, y: 0 };
+
+                    renderMap();
+                }
+            });
+
+            // Resize handler
+            window.addEventListener('resize', () => {
+                renderMap();
+            });
+        }
+
+        // Initialize the application
+        function init() {
+            setupEventListeners();
+            loadMapTiles();
+
+            // Setup service worker for offline functionality
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js').then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    }).catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+                });
+            }
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+
+</html>
