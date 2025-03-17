@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline Content - NewsFlash</title>
+    <title>Offline Page - NewsFlash</title>
     <link rel="stylesheet" href="./styles.css">
     <style>
         .offline-list {
@@ -90,7 +90,7 @@
 
     <main>
         <div class="container">
-            <h1 class="page-title">Offline Content</h1>
+            <h1 class="page-title">Offline Page</h1>
             <div class="offline-list" id="offline-content">
                 <div class="empty-state">
                     <p>Loading offline content...</p>
@@ -116,12 +116,15 @@
         document.getElementById('current-year').textContent = new Date().getFullYear();
 
         // Function to load offline content
-        function loadOfflineContent() {
+        async function loadOfflineContent() {
             const offlineContentElement = document.getElementById('offline-content');
 
             try {
                 // Get saved pages from median API
-                let pages = median.offlineAppSync.getSavedPages();
+                let response = await median.offlineAppSync.getSavedPages();
+                let pages = response.pages;
+
+                alert(JSON.stringify(pages));
 
                 // Check if pages exist and have items
                 if (pages && pages.length > 0) {
@@ -134,7 +137,7 @@
                         item.className = 'offline-item';
 
                         const link = document.createElement('a');
-                        link.href = page.url;
+                        link.href = "file://" + page.url;
                         link.textContent = page.name || 'Unnamed Page';
 
                         item.appendChild(link);
@@ -144,18 +147,18 @@
                     // No offline content found
                     offlineContentElement.innerHTML = `
                         <div class="empty-state">
-                            <p>No offline content available.</p>
-                            <p>Browse articles and click "Bookmark for Offline Reading" to save content for offline viewing.</p>
-                        </div>
+                            <p>No offline content available.<\/p>
+                            <p>Browse articles and click "Bookmark for Offline Reading" to save content for offline viewing.<\/p>
+                        <\/div>
                     `;
                 }
             } catch (error) {
                 console.error('Error loading offline content:', error);
                 offlineContentElement.innerHTML = `
                     <div class="empty-state">
-                        <p>Error loading offline content.</p>
-                        <p>This feature might not be supported in your current environment.</p>
-                    </div>
+                        <p>Error loading offline content.<\/p>
+                        <p>This feature might not be supported in your current environment.<\/p>
+                    <\/div>
                 `;
             }
         }
@@ -163,6 +166,7 @@
         // Load content when page loads
         document.addEventListener('DOMContentLoaded', loadOfflineContent);
     </script>
+
 </body>
 
 </html>
