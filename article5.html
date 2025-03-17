@@ -104,7 +104,9 @@
             try {
                 let response = await median.offlineAppSync.cachePage({
                     url: 'https://simple-news-app-three.vercel.app/article5.html',
-                    priority: 1
+                    priority: 1,
+                    name: 'International Arts Festival Celebrates Global Cultural Heritage',
+                    saveForUser: true,
                 });
                 if (response.success) {
                     console.log('Article cached for offline reading!');

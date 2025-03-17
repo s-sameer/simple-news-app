@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Content - NewsFlash</title>
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+        .offline-list {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 1.5rem;
+        }
+        
+        .offline-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.2s ease;
+        }
+        
+        .offline-item:last-child {
+            border-bottom: none;
+        }
+        
+        .offline-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .offline-item a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            display: block;
+        }
+        
+        .offline-item a:hover {
+            color: #1d4ed8;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+        
+        .refresh-button {
+            background-color: #2563eb;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            border: none;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 1rem;
+        }
+        
+        .refresh-button:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>NewsFlash</h1>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            <h1 class="page-title">Offline Content</h1>
+            <div class="offline-list" id="offline-content">
+                <div class="empty-state">
+                    <p>Loading offline content...</p>
+                </div>
+            </div>
+            <div class="text-center" style="margin-top: 1rem; text-align: center;">
+                <button class="refresh-button" onclick="loadOfflineContent()">Refresh Content List</button>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>© <span id="current-year"></span> NewsFlash. All content is for demo purposes only.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Function to load offline content
+        function loadOfflineContent() {
+            const offlineContentElement = document.getElementById('offline-content');
+            
+            try {
+                // Get saved pages from median API
+                let pages = median.offlineAppSync.getSavedPages();
+                
+                // Check if pages exist and have items
+                if (pages && pages.length > 0) {
+                    // Clear previous content
+                    offlineContentElement.innerHTML = '';
+                    
+                    // Add each page to the list
+                    pages.forEach(page => {
+                        const item = document.createElement('div');
+                        item.className = 'offline-item';
+                        
+                        const link = document.createElement('a');
+                        link.href = page.url;
+                        link.textContent = page.name || 'Unnamed Page';
+                        
+                        item.appendChild(link);
+                        offlineContentElement.appendChild(item);
+                    });
+                } else {
+                    // No offline content found
+                    offlineContentElement.innerHTML = `
+                        <div class="empty-state">
+                            <p>No offline content available.</p>
+                            <p>Browse articles and click "Bookmark for Offline Reading" to save content for offline viewing.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading offline content:', error);
+                offlineContentElement.innerHTML = `
+                    <div class="empty-state">
+                        <p>Error loading offline content.</p>
+                        <p>This feature might not be supported in your current environment.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Load content when page loads
+        document.addEventListener('DOMContentLoaded', loadOfflineContent);
+    </script>
+</body>
+</html>
