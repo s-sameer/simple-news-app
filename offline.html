@@ -124,7 +124,7 @@
                 let response = await median.offlineAppSync.getSavedPages();
                 let pages = response.pages;
 
-                alert(JSON.stringify(pages));
+                console.log(JSON.stringify(pages));
 
                 // Check if pages exist and have items
                 if (pages && pages.length > 0) {
