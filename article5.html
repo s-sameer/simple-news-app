@@ -50,7 +50,7 @@
                         <span class="article-category">Arts</span>
                     </div>
 
-                    <button class="bookmark-button" onclick="downloadArticle()">Bookmark for Offline Reading</button>
+                    <button id="bookmark-button" class="bookmark-button" onclick="downloadArticle()">Bookmark for Offline Reading</button>
 
                     <img src="https://images.unsplash.com/photo-1547891654-e66ed7ebb968?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
                         alt="International Arts Festival Celebrates Global Cultural Heritage" class="article-image">
@@ -109,6 +109,7 @@
                     saveForUser: true,
                 });
                 if (response.success) {
+                    document.getElementById('bookmark-button').textContent = 'Bookmarked successfully!';
                     console.log('Article cached for offline reading!');
                 } else {
                     console.error('Failed to download article');
