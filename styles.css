@@ -49,6 +49,26 @@ footer {
     text-align: center;
 }
 
+/* Footer links */
+.footer-links {
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.footer-link {
+    color: #3b82f6;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
 /* Page title */
 .page-title {
     font-size: 2rem;

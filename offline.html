@@ -120,7 +120,7 @@
             const offlineContentElement = document.getElementById('offline-content');
 
             try {
-                // Get saved pages from median API
+                // Get saved pages from median
                 let response = await median.offlineAppSync.getSavedPages();
                 let pages = response.pages;
 

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - NewsFlash</title>
+    <link rel="stylesheet" href="./styles.css">
+    <style>
+        .settings-container {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .settings-section {
+            margin-bottom: 2rem;
+        }
+        
+        .settings-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        
+        .settings-description {
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            margin: 1.5rem 0;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .slider-value {
+            font-weight: bold;
+            color: #2563eb;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 10px;
+            background: #e5e7eb;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+            border-radius: 5px;
+        }
+        
+        .slider:hover {
+            opacity: 1;
+        }
+        
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .cancel-button {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .save-button {
+            background-color: #2563eb;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .save-button:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .cancel-button:hover {
+            background-color: #d1d5db;
+        }
+        
+        .status-message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            display: none;
+        }
+        
+        .status-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>NewsFlash</h1>
+        </div>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="article-page">
+                <a href="/" class="back-button">← Back to News</a>
+                
+                <div class="settings-container">
+                    <h1 class="settings-title">App Settings</h1>
+                    
+                    <div class="settings-section">
+                        <h2>Offline Storage</h2>
+                        <p class="settings-description">Configure how much storage space the app can use for saving articles offline.</p>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Cache Limit:</span>
+                                <span class="slider-value" id="cache-value">50 MB</span>
+                            </div>
+                            <input type="range" min="10" max="500" value="50" class="slider" id="cache-slider">
+                            <div class="slider-label">
+                                <span>10 MB</span>
+                                <span>500 MB</span>
+                            </div>
+                        </div>
+                        
+                        <p class="settings-description">
+                            Setting a higher cache limit allows more articles to be saved for offline reading, 
+                            but will use more storage space on your device.
+                        </p>
+                    </div>
+                    
+                    <div id="status-message" class="status-message"></div>
+                    
+                    <div class="button-group">
+                        <button class="cancel-button" id="cancel-button">Cancel</button>
+                        <button class="save-button" id="save-settings-btn">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>© <span id="current-year"></span> NewsFlash. All content is for demo purposes only.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Cache slider functionality
+        const cacheSlider = document.getElementById('cache-slider');
+        const cacheValue = document.getElementById('cache-value');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        const cancelButton = document.getElementById('cancel-button');
+        const statusMessage = document.getElementById('status-message');
+        
+        // Update the value display as the slider moves
+        cacheSlider.oninput = function() {
+            cacheValue.textContent = this.value + ' MB';
+        }
+        
+        // Save settings button event
+        saveSettingsBtn.addEventListener('click', async () => {
+            const sliderValue = parseInt(cacheSlider.value, 10);
+            try {
+                let response = await median.offlineAppSync.setCacheStorageLimit({ limitMB: sliderValue });
+                console.log('Cache limit updated:', response);
+                showStatusMessage('Cache limit updated to ' + response.newLimitMB + ' MB', true);
+            } catch (error) {
+                console.error('Error setting cache limit:', error);
+                showStatusMessage('Failed to set cache limit. This feature may not be supported in your current environment.', false);
+            }
+        });
+        
+        // Cancel button redirects back to home
+        cancelButton.addEventListener('click', () => {
+            window.location.href = '/';
+        });
+        
+        // Show status message
+        function showStatusMessage(message, isSuccess) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message ' + (isSuccess ? 'status-success' : 'status-error');
+            statusMessage.style.display = 'block';
+            
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Try to get current cache limit when page loads
+        async function getCurrentCacheLimit() {
+            try {
+                let info = await median.offlineAppSync.getStorageInfo();
+                if (info && info.limitMB) {
+                    cacheSlider.value = info.limitMB;
+                    cacheValue.textContent = info.limitMB + ' MB';
+                }
+            } catch (error) {
+                console.log('Could not fetch current cache limit', error);
+            }
+        }
+        
+        // Call when page loads
+        document.addEventListener('DOMContentLoaded', getCurrentCacheLimit);
+    </script>
+</body>
+</html>
