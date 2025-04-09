@@ -151,6 +151,12 @@
                         </p>
                     </div>
                     
+                    <div class="settings-section">
+                        <h2>Cache Management</h2>
+                        <p class="settings-description">Clear all saved articles and cached data.</p>
+                        <button id="clear-cache-btn" class="cancel-button">Clear Cache</button>
+                    </div>
+                    
                     <div id="status-message" class="status-message"></div>
                     
                     <div class="button-group">
@@ -178,11 +184,24 @@
         const saveSettingsBtn = document.getElementById('save-settings-btn');
         const cancelButton = document.getElementById('cancel-button');
         const statusMessage = document.getElementById('status-message');
+        const clearCacheBtn = document.getElementById('clear-cache-btn');
         
         // Update the value display as the slider moves
         cacheSlider.oninput = function() {
             cacheValue.textContent = this.value + ' MB';
         }
+        
+        // Clear cache button event
+        clearCacheBtn.addEventListener('click', async () => {
+            try {
+                await median.offlineAppSync.clearCache();
+                console.log('Cache cleared successfully');
+                showStatusMessage('Cache cleared successfully', true);
+            } catch (error) {
+                console.error('Error clearing cache:', error);
+                showStatusMessage('Failed to clear cache. This feature may not be supported in your current environment.', false);
+            }
+        });
         
         // Save settings button event
         saveSettingsBtn.addEventListener('click', async () => {
