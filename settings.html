@@ -194,13 +194,22 @@
         // Clear cache button event
         clearCacheBtn.addEventListener('click', async () => {
             try {
+                // Add a console log before calling the function
+                console.log('Clear cache button clicked');
+                
+                // Check if median and offlineAppSync exist
+                if (!window.median || !window.median.offlineAppSync) {
+                    console.error('median.offlineAppSync is not available');
+                    showStatusMessage('Cache clearing feature is not available in this environment', false);
+                    return;
+                }
+                
                 await median.offlineAppSync.clearCache();
                 console.log('Cache cleared successfully');
                 showStatusMessage('Cache cleared successfully', true);
-                alert('Cache cleared successfully');
             } catch (error) {
                 console.error('Error clearing cache:', error);
-                showStatusMessage('Failed to clear cache. This feature may not be supported in your current environment.', false);
+                showStatusMessage('Failed to clear cache: ' + (error.message || 'Unknown error'), false);
             }
         });
         
